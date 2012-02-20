@@ -1,0 +1,1118 @@
+<<<<<<< /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+=======
+# -*- mode: python; python-indent: 4; tab-width: 4; indent-tabs-mode: t -*-
+
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+#####
+##### DATABASE STUFF
+#####
+
+#import pgdb
+import pgdb
+import os
+<<<<<<< /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+=======
+import time
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+
+from kparams import *
+from kiniconfig import *
+from ktbxsosdconfig import *
+from kreadline import *
+from kout import *
+from kexcept import *
+
+class NoRow(Exception):
+	def __init__(self, err_msg):
+		self.err_msg=err_msg
+	def __str__(self):
+		return repr(self.err_msg)
+
+
+# identifiers for database infos and handlers
+# don't change those ids... they match tbxsosd config tags...
+DB_PROFILES="user"
+DB_LOGIN="login"
+DB_PUBKEYS="pkey"
+DB_PRIVKEYS="skey"
+<<<<<<< /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+=======
+DB_EVENTS="event"
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+
+# will contain database handlers
+dbs = {}
+dbs_info = {}
+
+# init settings for all databases
+def db_init():
+	global dbs
+	global dbs_info
+
+	dbs[DB_PROFILES] = None
+	dbs[DB_LOGIN] = None
+	dbs[DB_PUBKEYS] = None
+	dbs[DB_PRIVKEYS] = None
+<<<<<<< /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+=======
+	dbs[DB_EVENTS] = None
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+
+	# get databases connection info
+	# first try ini files... 
+	# then try tbxsosd files
+<<<<<<< /home/repos/kctl/kdatabase.py.orig.380629861
+<<<<<<< /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+	try:
+=======
+	try:                
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+||||||| /home/fdgonthier/tmp/kdatabase.py~base.D-bP8W
+	try:                
+=======
+	try:				
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.Lsa77p
+		config = KIniConfig()
+		for key in dbs.keys():
+			dbs_info[key] = {}
+			dbs_info[key]["name"] = config.get("databases", "db_" + key + ".name")
+			dbs_info[key]["host"] = config.get("databases", "db_" + key + ".host")
+			dbs_info[key]["port"] = config.get("databases", "db_" + key + ".port")
+<<<<<<< /home/repos/kctl/kdatabase.py.orig.380629861
+<<<<<<< /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+			dbs_info[key]["username"] = config.get("databases", "db_" + key + ".admin_username")
+=======
+            dbs_info[key]["username"] = config.get("databases", "db_" + key + ".admin_username")
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+||||||| /home/fdgonthier/tmp/kdatabase.py~base.D-bP8W
+            dbs_info[key]["username"] = config.get("databases", "db_" + key + ".admin_username")
+=======
+			dbs_info[key]["username"] = config.get("databases", "db_" + key + ".admin_username")
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.Lsa77p
+			dbs_info[key]["password"] = config.get("databases", "db_" + key + ".admin_password")
+	except:
+		config = KTbxsosdConfig()
+		# This tells if kctl should try to login with the current username.
+<<<<<<< /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+		kctl_curr_creds = int(config.get("kctl.curr_creds"))
+=======
+		kctl_curr_creds = config.get("kctl.curr_creds")
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+		for key in dbs.keys():
+			dbs_info[key] = {}
+			dbs_info[key]["name"] = config.get("db_" + key + ".name")
+			dbs_info[key]["host"] = config.get("db_" + key + ".host")
+			dbs_info[key]["port"] = config.get("db_" + key + ".port")
+<<<<<<< /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+			if kctl_curr_creds == 1:
+=======
+			if str(kctl_curr_creds) == str(1):
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+				import pwd, os
+				dbs_info[key]["username"] = pwd.getpwuid(os.getuid())[0]
+<<<<<<< /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+=======
+				dbs_info[key]["password"] = config.get("db_" + key + ".admin_password")
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+			else:
+				dbs_info[key]["username"] = config.get("db_" + key + ".admin_username")
+				dbs_info[key]["password"] = config.get("db_" + key + ".admin_password")
+
+<<<<<<< /home/repos/kctl/kdatabase.py.orig.380629861
+	# connect to databases
+	for id in dbs.keys():
+<<<<<<< /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+=======
+||||||| /home/fdgonthier/tmp/kdatabase.py~base.D-bP8W
+	# connect to databases
+	for id in dbs.keys():
+=======
+# what can be None (connect to all databases) or a list of ids of databases to connect to
+def db_conn(dbi):
+	global dbs
+	global dbs_info
+
+	id = dbi
+	if dbs[id] == None:
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.Lsa77p
+		debug("Connecting to database '%s' (params %s)" % ( dbs_info[id]["name"], str(dbs_info[id]) ))
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+		host = dbs_info[id]["host"]
+		if dbs_info[id]["port"] != None and dbs_info[id]["port"] != "":
+			host = host + ":" + str(dbs_info[id]["port"])
+<<<<<<< /home/repos/kctl/kdatabase.py.orig.1718025403
+			dbs[id] = pgdb.connect(host = host, database = dbs_info[id]["name"],
+								   user = dbs_info[id]["username"], password = dbs_info[id]["password"])
+			debug("Connection successful to database '%s'" % ( dbs_info[id]["name"] ))
+||||||| /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+		dbs[id] = pgdb.connect(host = host, database = dbs_info[id]["name"],
+								user = dbs_info[id]["username"], password = dbs_info[id]["password"])
+
+=======
+		dbs[id] = pgdb.connect(host = host, database = dbs_info[id]["name"],
+							   user = dbs_info[id]["username"], password = dbs_info[id]["password"])
+		debug("Connection successful to database '%s'" % ( dbs_info[id]["name"] ))
+<<<<<<< /home/repos/kctl/kdatabase.py.orig.380629861
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+	
+||||||| /home/fdgonthier/tmp/kdatabase.py~base.D-bP8W
+	
+=======
+
+# connect to all dbs (to use only for selftest
+def db_conn_all():
+	for id in dbs:
+		db_conn(id)
+
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.Lsa77p
+def db_commit():
+	global dbs
+
+	if kparams_get("commit") == True:
+		for id in dbs.keys():
+			if dbs[id] != None:
+				dbs[id].commit()
+		debug("commited changes.")
+	else:
+		for id in dbs.keys():
+			if dbs[id] != None:
+				dbs[id].rollback()
+		out("NOT COMMITING DATABASE CHANGES!!!")
+
+
+
+
+# quote and escape sql argument
+# WARNING: uses pgdb._quote() which is an internal function
+def db_safestr(s):
+	return str(pgdb._quote(s))
+
+
+# makes query available in debugging (debugging can be on or off - see kout.py)
+def db_debug_query(query):
+	if kparams_get("db_debug_query") == True:
+		debug("query: '" + query + "'", True) # force debugging
+	else:
+		debug("query: '" + query + "'")
+
+
+# exec query - raise exception if error
+def db_exec(dbi, query):
+	db_conn(dbi)
+	dbh = dbs[dbi]
+
+	cur = dbh.cursor()
+
+	try:
+		cur.execute(query)
+	except pgdb.DatabaseError, e:
+		db_conn(dbi)
+		dbh.rollback()
+		raise ExError(str(e))
+
+	return cur.rowcount
+
+
+# returns the first element of the first row - raise NoRow if no row available
+def db_get_first_element(dbi, query):
+    db_conn(dbi)
+    dbh = dbs[dbi]
+
+	cur = dbh.cursor()
+
+	try:
+		cur.execute(query)
+	except pgdb.DatabaseError, e:
+		dbh.rollback()
+		raise ExError(str(e))
+
+	# check row count
+	if cur.rowcount == None or cur.rowcount < 1:
+		raise NoRow("no row returned")
+
+	# get first row
+	row = cur.fetchone()
+
+	return row[0]
+
+<<<<<<< /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+=======
+# returns the first row - raise NoRow if no row available
+def db_get_first_row(dbi, query):
+    db_conn(dbi)
+    dbh = dbs[dbi]
+
+	cur = dbh.cursor()
+
+	try:
+		cur.execute(query)
+	except pgdb.DatabaseError, e:
+		dbh.rollback()
+		raise ExError(str(e))
+
+	# check row count
+	if cur.rowcount == None or cur.rowcount < 1:
+		raise NoRow("no row returned")
+
+	# get first row
+	row = cur.fetchone()
+
+	return row
+
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+
+
+# returns True if any row found - false otherwise
+def db_has_record(dbi, query):
+    db_conn(dbi)
+    dbh = dbs[dbi]
+
+	cur = dbh.cursor()
+
+	try:
+		cur.execute(query)
+	except pgdb.DatabaseError, e:
+		dbh.rollback()
+		raise ExError(str(e))
+
+	# check row count
+<<<<<<< /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+	if cur.rowcount == None or cur.rowcount < 1:
+=======
+	# don't rely on rowcount since it's not working will all databases (sqlite)
+	if cur.fetchone() == None:
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+		return False
+
+	return True
+
+
+
+# returns list [desc, data] from the query
+# desc is a list of field infos
+# data if a list of rows
+# ie:
+# desc: TODO
+# data: [ [1, 'Gaga'], [2, 'gogo'] ]
+# returns [ None, None ] if no data
+def db_find_list_desc_data(dbi, query):
+	db_conn(dbi)
+	dbh = dbs[dbi]
+
+	cur = dbh.cursor()
+
+	try:
+		cur.execute(query)
+	except pgdb.DatabaseError, e:
+		dbh.rollback()
+		raise ExError(str(e))
+
+	if cur.rowcount == None or cur.rowcount < 1:
+		return [ None, None ]
+
+	field_descs = []
+	for row in cur.description:
+		field_descs.append([row[0]])
+	#field_descs = cur.description
+	res = cur.fetchall()
+
+	return [ field_descs, res ]
+
+
+
+# returns list of hashes
+# i.e. [ { 'col1' => value1, 'col2' => value2 }, { 'col1' => value3, 'col2' => value4 } ]
+# returns empty list if no data
+def db_find_hash(dbi, query):
+    db_conn(dbi)
+    dbh = dbs[dbi]
+
+	cur = dbh.cursor()
+
+	try:
+		cur.execute(query)
+	except pgdb.DatabaseError, e:
+		dbh.rollback()
+		raise ExError(str(e))
+
+	if cur.rowcount == None:
+		return None
+
+	res = []
+	desc = cur.description
+
+	while 1:
+		row = cur.fetchone()
+		if row == None: break
+		new_row = {}
+		i = 0
+		for val in row:
+			fieldname = desc[i][0]
+			new_row[fieldname] = val
+			i += 1
+		res.append(new_row)
+
+	return res
+
+
+
+
+
+# returns all rows from table (as an hash)
+def db_find_all_from_table_hash(dbi, table):
+	return db_find_hash(dbi, "SELECT * FROM " + table)
+
+
+# returns the first row of the table specified where the value of
+# the column specified matches the value specified.
+def db_find_id_hash(dbi, table, column, value):
+	query = "SELECT * FROM " + table + " WHERE " + column + " = %s" % ( db_safestr(value) )
+	res = db_find_hash(dbi, query)
+	if res == None or len(res) < 1:
+		return None
+	return res[0]
+
+# returns the first row of the table specified where the value of
+# the column specified matches the value specified.
+def db_has_record_id(dbi, table, column, value):
+	query = "SELECT * FROM " + table + " WHERE " + column + " = %s" % ( db_safestr(value) )
+	db_debug_query(query)
+	return db_has_record(dbi, query)
+
+
+
+
+# Variant of the function above. The rows having a value that match the value
+# specified are deleted. The function returns the number of rows deleted.
+def db_delete_id(dbi, table, column, value):
+	query = "DELETE FROM " + table + " WHERE " + column + " = %s" % ( db_safestr(value) )
+	db_exec(dbi, query)
+
+
+
+
+
+###
+### Specialised database functions. ###
+###
+
+def sdb_logins_find():
+	return db_find_all_from_table_hash(DB_LOGIN, "user_login")
+def sdb_login_find(id):
+	return db_find_id_hash(DB_LOGIN, "user_login", "prof_id", id)
+def sdb_login_find_by_login(login):
+	return db_find_id_hash(DB_LOGIN, "user_login", "user_name", login)
+def sdb_login_delete(id):
+	return db_delete_id(DB_LOGIN, "user_login", "prof_id", id)
+
+def sdb_profiles_find():
+	return db_find_hash(DB_PROFILES, "SELECT * FROM profiles")
+def sdb_profile_find(id):
+	return db_find_id_hash(DB_PROFILES, "profiles", "prof_id", id)
+
+def sdb_user_profile_valid(id):
+	return db_has_record_id(DB_PROFILES, "user_profiles", "user_id", id)
+
+def sdb_group_profile_valid(id):
+	return db_has_record_id(DB_PROFILES, "group_profiles", "group_id", id)
+
+def sdb_ldap_group_find(id):
+	return db_has_record_id(DB_PROFILES, "ldap_groups", "group_id", id)
+
+def sdb_email_part_find(id):
+	return db_has_record_id(DB_PROFILES, "email_parts", "group_id", id)
+
+
+
+def sdb_email_primary_find(id):
+	return db_find_hash(DB_PROFILES,
+		"SELECT * FROM emails WHERE user_id=%s AND is_primary = TRUE" % ( db_safestr(id) ))
+def sdb_email_find(id):
+	return db_find_id_hash(DB_PROFILES, "emails", "user_id", id)
+
+# check org existance
+def sdb_org_exist(id):
+	global dbs
+	query = "select * from organization where org_id=%s" % ( db_safestr(id) )
+	return db_has_record(DB_PROFILES, query)
+
+def sdb_org_check(id):
+	if sdb_org_exist(id) != True:
+		raise ExError("Organization id %s does not exist" % ( id ))
+
+# check profile existance
+def sdb_prof_exist(id):
+	global dbs
+	query = "select * from profiles where prof_id=%s" % ( db_safestr(id) )
+	return db_has_record(DB_PROFILES, query)
+
+def sdb_prof_check(id):
+	if sdb_prof_exist(id) != True:
+		raise ExError("Profile id %s does not exist" % ( id ))
+
+
+def sdb_getorgname(org_id):
+	global dbs
+
+	query = "select name from organization where org_id = %s" % ( db_safestr(org_id) )
+	db_debug_query(query)
+	return db_get_first_element(DB_PROFILES, query)
+
+<<<<<<< /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+=======
+def sdb_org_id_by_kdn(kdn):
+	global dbs
+
+	query = "select org_id from organization where name=%s" % ( db_safestr(kdn) )
+	db_debug_query(query)
+	return db_get_first_element(DB_PROFILES, query)
+
+def sdb_kdn_by_org_id(org_id):
+	global dbs
+
+	query = "select name from organization where org_id=%s" % ( db_safestr(org_id) )
+	db_debug_query(query)
+	return db_get_first_element(DB_PROFILES, query)
+
+def sdb_org_keys(org_id):
+	global dbs
+
+	query = "SELECT key_id FROM profiles WHERE org_id=%s" % ( db_safestr(org_id) )
+	db_debug_query(query)
+	return db_find_list_desc_data(DB_PROFILES, query)
+
+
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+def sdb_getprofilegroupid(prof_id):
+	global dbs
+
+	query = "select group_id from profiles where prof_id = %s" % ( db_safestr(prof_id) )
+	db_debug_query(query)
+	return db_get_first_element(DB_PROFILES, query)
+
+def sdb_getgroupprofileid(group_id):
+	global dbs
+
+	query = "select prof_id from profiles where group_id = %s" % ( db_safestr(group_id) )
+	db_debug_query(query)
+	return db_get_first_element(DB_PROFILES, query)
+
+def sdb_getorgprofiles(org_id):
+	global dbs
+
+	query = "select prof_id from profiles where org_id = %s" % ( db_safestr(org_id) )
+	db_debug_query(query)
+	return db_find_list_desc_data(DB_PROFILES, query)
+
+def sdb_getprofileorg(prof_id):
+	global dbs
+
+	query = "select org_id from profiles where prof_id = %s" % ( db_safestr(prof_id) )
+	db_debug_query(query)
+	return db_get_first_element(DB_PROFILES, query)
+	
+# get profile status
+def sdb_getprofstatus(id):
+	global dbs
+
+	sdb_prof_check(id)
+
+	query = "select * from get_prof_status(%s);" % (db_safestr(id))
+	db_debug_query(query)
+	return db_get_first_element(DB_PROFILES, query)
+
+
+# get profile name
+def sdb_get_org_name(id):
+	global dbs
+
+	sdb_org_check(id)
+
+	query = "select name from organization WHERE org_id = %s;" % (db_safestr(id))
+	db_debug_query(query)
+	return db_get_first_element(DB_PROFILES, query)
+
+
+# get profile name
+def sdb_get_prof_name(id):
+	global dbs
+
+	sdb_prof_check(id)
+
+	query = "select * from get_profile_name(%s);" % (db_safestr(id))
+	db_debug_query(query)
+	return db_get_first_element(DB_PROFILES, query)
+
+
+# return True / False
+def sdb_key_valid(key_id):
+	global dbs
+
+	query = "select * from pkey_view where key_id = %s;" % ( db_safestr(key_id) )
+	db_debug_query(query)
+	return db_has_record(DB_PUBKEYS, query)
+
+# get key status
+def sdb_getkeystatus(id):
+	global dbs
+
+	query = "select * from get_key_status(%s);" % (db_safestr(id))
+	db_debug_query(query)
+	return db_get_first_element(DB_PROFILES, query)
+
+
+# set key status
+def sdb_setkeystatus(id, status):
+	global dbs
+
+	query = "select set_key_status(%s, %s);" % (db_safestr(id), db_safestr(status))
+	db_debug_query(query)
+	db_exec(DB_PROFILES, query)
+
+<<<<<<< /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+=======
+# check if priv key exists
+def sdb_privkeyexists(id):
+	global dbs
+
+	query = "select key_id from private_key where key_id=%s;" % ( id )
+	db_debug_query(query)
+	return db_has_record(DB_PRIVKEYS, query)
+
+# check if pub key exists
+def sdb_pubkeyexists(id):
+	global dbs
+
+	query = "select key_id from public_key where key_id=%s;" % ( id )
+	db_debug_query(query)
+	return db_has_record(DB_PUBKEYS, query)
+
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+# delete private keys
+def sdb_delprivkeys(id):
+	global dbs
+
+	query = "select del_key(%s);" % ( db_safestr(id) )
+	db_debug_query(query)
+	db_exec(DB_PRIVKEYS, query)
+
+# delete public keys
+def sdb_delpubkeys(id):
+	global dbs
+
+	query = "select del_key(%s);" % ( db_safestr(id) )
+	db_debug_query(query)
+	db_exec(DB_PUBKEYS, query)
+
+# adds a primary email to a user
+def sdb_addpemail(prof_id, email):
+	global dbs
+
+	query = "select add_primary_email(%s, %s);" % (db_safestr(prof_id), db_safestr(email))
+	db_debug_query(query)
+	db_exec(DB_PROFILES, query)
+
+
+# adds an email or email part
+def sdb_addemail(prof_id, email):
+	global dbs
+
+	query = "select add_email(%s, %s);" % (db_safestr(prof_id), db_safestr(email))
+	db_debug_query(query)
+	db_exec(DB_PROFILES, query)
+
+
+# delete an email or email part
+def sdb_rmemail(prof_id, email):
+	global dbs
+
+	query = "select del_email(%s, %s);" % (db_safestr(prof_id), db_safestr(email))
+	db_debug_query(query)
+	db_exec(DB_PROFILES, query)
+
+# List all email address for a profile.
+def sdb_lsemail(prof_id):
+	global dbs
+
+	query = "select * from email_ls(%s);" % ( db_safestr(prof_id) )
+	db_debug_query(query)
+	return db_find_list_desc_data(DB_PROFILES, query)
+
+
+
+def sdb_addgroup(org_id, group_name):
+	global dbs
+
+	query = "select add_group_profile(%s, %s);" % ( db_safestr(org_id), db_safestr(group_name) )
+	db_debug_query(query)
+	return db_get_first_element(DB_PROFILES, query)
+
+def sdb_addldapgroup(group_id, group_dn):
+	global dbs
+
+	query = "select add_ldap_group(%s, %s);" % ( db_safestr(group_id), db_safestr(group_dn) )
+	db_debug_query(query)
+	return db_get_first_element(DB_PROFILES, query)
+
+def sdb_lsldapgroups(group_id):
+	global dbs
+
+	query = "select * from ldap_groups where group_id = %s;" % ( db_safestr(group_id) )
+	db_debug_query(query)
+	return db_find_list_desc_data(DB_PROFILES, query)
+
+def sdb_rmldapgroup(ldap_group_id):
+	global dbs
+
+	query = "select del_ldap_group(%s);" % ( db_safestr(ldap_group_id) )
+	db_debug_query(query)
+	db_exec(DB_PROFILES, query)
+
+<<<<<<< /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+
+=======
+def sdb_set_org_license(kdn, lic):
+<<<<<<< /home/repos/kctl/kdatabase.py.orig.380629861
+    global dbs
+    query = "select set_org_license(%s, %s);" % ( db_safestr(kdn), db_safestr(lic) )
+    db_debug_query(query)
+    db_exec(dbs[DB_PROFILES], query)
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+||||||| /home/fdgonthier/tmp/kdatabase.py~base.D-bP8W
+    global dbs
+    query = "select set_org_license(%s, %s);" % ( db_safestr(kdn), db_safestr(lic) )
+    db_debug_query(query)
+    db_exec(dbs[DB_PROFILES], query)
+=======
+	global dbs
+	query = "select set_org_license(%s, %s);" % ( db_safestr(kdn), db_safestr(lic) )
+	db_debug_query(query)
+	db_exec(DB_PROFILES, query)
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.Lsa77p
+
+def sdb_addorg(org_name):
+	global dbs
+
+	query = "select add_org(%s);" % ( db_safestr(org_name) )
+	db_debug_query(query)
+	return db_get_first_element(DB_PROFILES, query)
+
+
+def sdb_rmorg(org_id):
+	global dbs
+
+	query = "select del_org(%s);" % ( db_safestr(org_id) )
+	db_debug_query(query)
+	db_exec(DB_PROFILES, query)
+
+
+def sdb_lsorg():
+	global dbs
+
+	query = "select * from organization_view;"
+	db_debug_query(query)
+	return db_find_list_desc_data(DB_PROFILES, query)
+
+
+def sdb_setorgforwardto(org_id, forward_to):
+	global dbs
+
+	query = "select set_org_forward_to(%s, %s);" % ( db_safestr(org_id), db_safestr(forward_to) )
+	db_debug_query(query)
+	db_exec(DB_PROFILES, query)
+
+
+def sdb_adduser(org_id, first_name, last_name):
+	global dbs
+
+	query = "select add_user_profile(%s, %s, %s);" % ( db_safestr(org_id), 
+			db_safestr(first_name), db_safestr(last_name) )
+	db_debug_query(query)
+<<<<<<< /home/repos/kctl/kdatabase.py.orig.380629861
+<<<<<<< /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+	db_exec(dbs[DB_PROFILES], query)
+
+
+=======
+	return db_get_first_element(dbs[DB_PROFILES], query)
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+||||||| /home/fdgonthier/tmp/kdatabase.py~base.D-bP8W
+	return db_get_first_element(dbs[DB_PROFILES], query)
+=======
+	return db_get_first_element(DB_PROFILES, query)
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.Lsa77p
+
+def sdb_rmprofile(prof_id):
+	global dbs
+
+	query = "select del_profile(%s);" % ( db_safestr(prof_id) )
+	db_debug_query(query)
+	db_exec(DB_PROFILES, query)
+
+<<<<<<< /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+
+=======
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+def sdb_lsprofiles():
+	global dbs
+
+	query = "select * from profiles_view;"
+	db_debug_query(query)
+	return db_find_list_desc_data(DB_PROFILES, query)
+
+
+
+
+def sdb_addlogin(org_id, prof_id, username, password):
+	global dbs
+
+	query = "select add_login(%s, %s, %s, %s);" % ( db_safestr(username), db_safestr(password), db_safestr(prof_id), db_safestr(org_id) )
+	db_debug_query(query)
+	db_exec(DB_LOGIN, query)
+
+<<<<<<< /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+
+=======
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+def sdb_rmlogin(login):
+	global dbs
+
+	query = "select del_login(%s);" % ( db_safestr(login) )
+	db_debug_query(query)
+	db_exec(DB_LOGIN, query)
+
+<<<<<<< /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+
+=======
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+def sdb_lslogin():
+	global dbs
+
+	query = "select * from login_view;"
+	db_debug_query(query)
+	return db_find_list_desc_data(DB_LOGIN, query)
+
+def sdb_setkey(prof_id, key_id):
+	global dbs
+
+	query = "select set_key(%s, %s);" % ( db_safestr(prof_id), db_safestr(key_id) )
+	db_debug_query(query)
+	db_exec(DB_PROFILES, query)
+
+def sdb_disownkey(prof_id):
+	global dbs
+
+	query = "select unset_key(%s);" % ( db_safestr(prof_id) )
+	db_debug_query(query)
+	db_exec(DB_PROFILES, query)
+
+def sdb_lskeys():
+	global dbs
+
+	query = "select * from pkey_view;"
+	db_debug_query(query)
+	return db_find_list_desc_data(DB_PUBKEYS, query)
+
+def sdb_reseller_allocated_seats(org_id):
+	global dbs
+
+	query = "select sum(num) from login_seats_allocation where parent_org_id = %s" % ( db_safestr(org_id) )
+	db_debug_query(query)
+	return db_get_first_element(DB_LOGIN, query)
+
+<<<<<<< /home/repos/kctl/kdatabase.py.orig.380629861
+<<<<<<< /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+=======
+def sdb_set_reseller_seats(counttotal, best_before):
+||||||| /home/fdgonthier/tmp/kdatabase.py~base.D-bP8W
+def sdb_set_reseller_seats(counttotal, best_before):
+=======
+def sdb_allocated_seats(org_id):
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.Lsa77p
+	global dbs
+
+	query = "select num from login_seats_allocation where org_id = %s" % ( db_safestr(org_id) )
+	db_debug_query(query)
+	return db_get_first_element(DB_LOGIN, query)
+
+def sdb_setseatsallocation(p_org_id, org_id, number):
+	global dbs
+
+	query = "select set_seats_allocation(%s, %s, %s);" % ( db_safestr(p_org_id), db_safestr(org_id), db_safestr(number) )
+	db_debug_query(query)
+	db_exec(DB_LOGIN, query)
+
+def sdb_lsseatsallocation():
+	global dbs
+
+	query = "select * from login_seats_allocation"
+	db_debug_query(query)
+	return db_find_list_desc_data(DB_LOGIN, query)
+
+def sdb_lsseatsorg(org_id):
+	global dbs
+
+	query = "select user_name from login_seats where org_id=%s" % ( db_safestr(org_id) )
+	db_debug_query(query)
+	return db_find_list_desc_data(DB_LOGIN, query)
+
+<<<<<<< /home/repos/kctl/kdatabase.py.orig.380629861
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+def sdb_lslicenses():
+||||||| /home/fdgonthier/tmp/kdatabase.py~base.D-bP8W
+def sdb_lslicenses():
+=======
+def sdb_freeloginseat(org_id, username):
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.Lsa77p
+	global dbs
+
+	query = "select free_login_seat(%s, %s);" % ( db_safestr(org_id), db_safestr(username) )
+	db_debug_query(query)
+	db_exec(DB_LOGIN, query)
+
+<<<<<<< /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+=======
+def sdb_importpubkey(text, id, owner, data):
+	global dbs
+
+	query = "select import_key(%s, %s, %s, %s);" % ( db_safestr(text), db_safestr(id), db_safestr(owner), db_safestr(data) )
+	db_debug_query(query)
+	return db_exec(DB_PUBKEYS, query) 
+
+def sdb_importprivkey(text, id, owner, data):
+	global dbs
+
+	query = "select import_key(%s, %s, %s, %s);" % ( db_safestr(text), db_safestr(id), db_safestr(owner), db_safestr(data) )
+	db_debug_query(query)
+	return db_exec(DB_PRIVKEYS, query) 
+
+def sdb_getpubkey(text, id):
+	global dbs
+
+	query = "select key_data from %s_key where key_id=%s;" % ( text, db_safestr(id) )
+	db_debug_query(query)
+	return db_get_first_element(DB_PUBKEYS, query)
+
+def sdb_getprivkey(text, id):
+	global dbs
+
+	query = "select key_data from %s_key where key_id=%s;" % ( text, db_safestr(id) )
+	db_debug_query(query)
+	return db_get_first_element(DB_PRIVKEYS, query)
+
+# returns a list: [nb of packagings in the specified (inclusive) interval, total time as h:m:s]
+# expects start and stop as UTC seconds from epoch
+def sdb_getstatspackagings(start, stop, type=None):
+	global dbs
+
+	# timestamps are stored as "Y-m-d h:m:s" (local time)
+	start = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start))
+	stop = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(stop))
+
+	query = "select count(*), sum(disconntime - conntime)"
+	query = query + " from packagings"
+	query = query + " where conntime>='%s' and disconntime<='%s'" % ( start, stop )
+	if type != None:
+		query = query + " and pkg_type='%d'" % ( type )
+	db_debug_query(query)
+	return db_get_first_row(DB_EVENTS, query)
+
+# returns a list: [nb of processings in the specified (inclusive) interval, total time as h:m:s]
+# expects start and stop as UTC seconds from epoch
+def sdb_getstatsprocessings(start, stop, type=None):
+	global dbs
+
+	# timestamps are stored as "Y-m-d h:m:s" (local time)
+	start = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start))
+	stop = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(stop))
+
+	query = "select count(*), sum(disconntime - conntime)"
+	query = query +	" from processings"
+	query = query +	" where conntime>='%s' and disconntime<='%s'" % ( start, stop )
+	if type != None:
+		query = query + " and pkg_type='%d'" % ( type )
+	db_debug_query(query)
+	return db_get_first_row(DB_EVENTS, query)
+<<<<<<< local
+
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+=======
+>>>>>>> other
+
+### BEGIN_TESTS ###
+
+def sdb_test_org_all():
+	print "org_all()"
+	org_id = sdb_addorg("lalala")
+	print sdb_lsorg()
+	sdb_setorgforwardto(org_id, "lalalala@lilililili")
+	print sdb_lsorg()
+	sdb_setorgforwardto(org_id, "")
+	print sdb_lsorg()
+	sdb_rmorg(org_id)
+	try:
+		out("SHOULD FAIL:")
+		sdb_rmorg(org_id)
+	except:
+		out("FAILED")
+	print "OK"
+
+# FOR LDAP
+
+def sdb_test_group_all():
+	print "group_all()"
+	org_id = sdb_addorg("lalala")
+	prof_id = sdb_addgroup(org_id, "group1")
+	sdb_rmprofile(prof_id)
+	try:
+		out("SHOULD FAIL:")
+		sdb_rmprofile(prof_id)	
+	except:
+		out("FAILED")
+	print "OK"
+
+# FOR LOCAL USERS
+
+def sdb_test_user_all():
+	print "user_all()"
+	try:
+		out("SHOULD FAIL:")
+		prof_id = sdb_adduser("99112045945", "Mathieu", "Martin")
+	except:
+		out("FAILED")
+	org_id = sdb_addorg("lalala")
+	prof_id = sdb_adduser(org_id, "Mathieu", "Martin")
+	sdb_rmprofile(prof_id)
+	try:
+		out("SHOULD FAIL:")
+		sdb_rmprofile(prof_id)	
+	except:
+		out("FAILED")
+	print "OK"
+
+def sdb_test_sdb_email_all():
+	print "email_all()"
+	try:
+		out("SHOULD FAIL:")
+		sdb_addemail("99112045945", "mathieu@mathieu")
+	except:
+		out("FAILED")
+	try:
+		out("SHOULD FAIL:")
+		sdb_rmemail("99112045945", "fgdf53erter@gdfg456dgdf")
+	except:
+		out("FAILED")
+	org_id = sdb_addorg("lalala")
+	prof_id = sdb_adduser(org_id, "Mathieu", "Martin")
+	sdb_addpemail(prof_id, "mathieu@mathieu")
+	sdb_addemail(prof_id, "mathieu@mathieu")
+	sdb_addemail(prof_id, "mathieu@mathieu")
+	sdb_lsemail(prof_id)
+	sdb_rmemail(prof_id, "mathieu@mathieu")
+	# bug in stored procedure?! 
+	sdb_rmemail(prof_id, "mathieu@mathieu")
+	sdb_rmemail(prof_id, "mathieu@mathieu")
+	sdb_rmemail(prof_id, "mathieu@mathieu")
+	print "OK"
+
+def sdb_test_profile_all():
+	print "profile_all()"
+	org_id = sdb_addorg("lalala")
+	prof_id = sdb_adduser(org_id, "Mathieu", "Martin")
+	sdb_addpemail(prof_id, "mathieu@mathieu")
+	sdb_addemail(prof_id, "mathieu@mathieu")
+	sdb_rmemail(prof_id, "mathieu@mathieu")
+	sdb_rmprofile(prof_id)
+	try:
+		out("SHOULD FAIL:")
+		sdb_rmprofile(prof_id)
+	except:
+		out("FAILED")
+	print "OK"
+
+
+def sdb_test_login_all():
+	print "sdb_login_all()"
+	sdb_addlogin(97586, "mathieu", "hahahaha")
+	db_commit()
+	try:
+		out("SHOULD FAIL:")
+		sdb_addlogin(97586, "mathieu", "hahahaha")
+	except:
+		out("FAILED")
+	db_commit()
+	sdb_lslogin()
+	sdb_rmlogin("mathieu")
+	db_commit()
+	try:
+		out("SHOULD FAIL:")
+		sdb_rmlogin("mathieu")
+	except:
+		out("FAILED")
+	db_commit()
+	print "OK"
+
+
+<<<<<<< /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+=======
+def sdb_test_stats_all():
+	print "stats_all()"
+	print sdb_getstatspackagings('2008-01-01 00:00:00', '2008-03-30 23:59:59')
+	print sdb_getstatspackagings('2008-01-01 00:00:00', '2008-03-30 23:59:59', 0)
+	print sdb_getstatspackagings('2008-01-01 00:00:00', '2008-03-30 23:59:59', 1)
+	print sdb_getstatspackagings('2008-01-01 00:00:00', '2008-03-30 23:59:59', 2)
+	print sdb_getstatspackagings('2008-01-01 00:00:00', '2008-03-30 23:59:59', 3)
+
+	print sdb_getstatsprocessings('2008-01-01 00:00:00', '2008-03-30 23:59:59')
+	print sdb_getstatsprocessings('2008-01-01 00:00:00', '2008-03-30 23:59:59', 0)
+	print sdb_getstatsprocessings('2008-01-01 00:00:00', '2008-03-30 23:59:59', 1)
+	print sdb_getstatsprocessings('2008-01-01 00:00:00', '2008-03-30 23:59:59', 2)
+	print sdb_getstatsprocessings('2008-01-01 00:00:00', '2008-03-30 23:59:59', 3)
+
+
+
+
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+def sdb_test_run():
+	db_init()
+
+<<<<<<< local
+<<<<<<< /home/repos/kctl/kdatabase.py.orig.1718025403
+=======
+	sdb_test_exportkey()
+>>>>>>> other
+	#sdb_test_org_all()
+<<<<<<< local
+	#sdb_test_group_all()
+	#sdb_test_user_all()
+	#sdb_test_email_all()
+	#sdb_test_profile_all()
+	#sdb_test_login_all()
+	sdb_test_stats_all()
+||||||| /home/fdgonthier/tmp/kdatabase.py~base.9bG6qK
+	sdb_test_org_all()
+	sdb_test_group_all()
+	sdb_test_user_all()
+	sdb_test_email_all()
+	sdb_test_profile_all()
+
+	sdb_test_login_all()
+=======
+	sdb_test_org_all()
+=======
+>>>>>>> other
+	#sdb_test_group_all()
+	#sdb_test_user_all()
+	#sdb_test_email_all()
+	#sdb_test_profile_all()
+	#sdb_test_login_all()
+	#sdb_test_stats_all()
+>>>>>>> /home/fdgonthier/tmp/kdatabase.py~other.6jzd-D
+
+
+if __name__ == "__main__":
+	sdb_test_run()
+
+### END_TESTS ###
+
+

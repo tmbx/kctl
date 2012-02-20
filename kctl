@@ -1,0 +1,1201 @@
+#!/usr/bin/env python
+
+#####
+##### OUTPUT AND DEBUG
+#####
+
+import sys
+
+# don't debug by default
+try:
+	debug_enable
+except:
+	debug_enable = False
+
+# can be called from another script to enable debugging
+def do_debug():
+	global debug_enable
+	debug_enable = True
+
+# can be called from another script to disable debugging
+def dont_debug():
+	global debug_enable
+	debug_enable = False
+
+# ?? 
+def is_debug():
+	global debug_enable
+	return debug_enable
+
+def out_raw(message):
+	sys.stdout.write(message);
+
+def out(message):
+	sys.stdout.write(message + "\n");
+
+def err_raw(message):
+	sys.stderr.write(message);
+
+def err(message):
+	sys.stderr.write(message + "\n");
+
+def debug_raw(message):
+	if debug_enable == True:
+		sys.stderr.write(message);
+
+def debug(message):
+	if debug_enable == True:
+		sys.stderr.write(message + "\n");
+
+
+#####
+##### CUSTOM EXCEPTIONS
+#####
+
+from kout import *
+
+class ExError(Exception):
+	def __init__(self, err_msg):
+		self.err_msg=err_msg
+	def __str__(self):
+		return repr(self.err_msg)
+
+#####
+##### FILE RELATED FUNCTIONS
+#####
+
+import os
+from kexcept import *
+from kout import *
+
+# mk dirs recursively
+def mkdirs(dir):
+	if type(dir) != str:
+		raise ExError("bad dir parameter")
+	if os.path.isdir(dir):
+		pass
+	elif os.path.isfile(dir):
+		raise ExError("a file with the same name as the desired dir, '%s', already exists" % (dir) )
+	else:
+		head, tail = os.path.split(dir)
+		if head and not os.path.isdir(head):
+			mkdirs(head)
+		if tail:
+			try:
+				os.mkdir(dir)
+			except:
+				raise ExError("could not create dir '%s'" % (dir))
+
+
+def file_read(file):
+	if type(file) != str:
+		raise ExError("bad parameter")
+	if not os.path.exists(file):
+		raise ExError("file '%s' does not exist" % (file))
+	if not os.access(file, os.R_OK):
+		raise ExError("file '%s' is not readable" % (file))
+	try:
+		f = open(file, "rb")
+		content = f.read()
+		f.close()
+	except:
+		raise ExError("could not read file '%s'" % (file))
+
+	return content
+
+
+def file_write_force(file, data):
+	dir = os.path.dirname(file)
+	mkdirs(dir)
+	file_write(file, data)
+
+
+def file_write(file, data):
+	dir = os.path.dirname(file)
+	if not os.path.exists(dir):
+		raise ExError("directory '%s' does not exists" % (dir))
+	if os.path.exists(file):
+		if not os.access(file, os.W_OK):
+			raise ExError("file '%s' is not writable" % (file))
+	else:
+		if not os.access(dir, os.W_OK):
+			raise ExError("dir '%s' is not writable" % (dir))
+		
+	try:
+		f = open(file, "wb")
+		f.write(data)
+		f.close()
+	except:
+		raise(ExError("could not write data to file"))
+
+#####
+##### READLINE
+#####
+
+from kout import *
+
+# This function prompts the user for a string. It returns the string entered,
+# which can be "".
+def input_prompt(prompt):
+    try:
+        return raw_input(prompt + " ")
+
+    except Exception:
+        out("")
+        raise KeyboardInterrupt
+
+
+#####
+##### GET CONFIGS FROM TBXSOSD
+#####
+
+# using regexps - could be improved...
+
+CONF_DIR = "/etc/teambox/tbxsosd"
+
+import re
+
+from kfile import *
+from kpopen import *
+
+# port from ruby
+class KConfig:
+	options = {}
+
+	def __init__(self):
+		# read main file, which contains include commands
+		main_conf = file_read(CONF_DIR + "/tbxsosd.conf")
+
+		# m4 parses the include commands and read files 
+		proc = KPopen(main_conf, "m4", "-I", CONF_DIR)
+
+		out = proc.stdout
+		err = proc.stderr
+		status = proc.return_code
+
+		if status != 0:
+			raise "Could not read config"
+
+		# out is a string containing all included files in tbxsosd.conf
+		self.load_string(out)
+
+		# Open the local configuration file
+		local_conf = file_read(CONF_DIR + "/web.conf")
+		self.load_string(local_conf)
+
+
+	# load configs from string
+	def load_string(self, data):
+		for line in data.split("\n"):
+			p = re.compile(r'^([^#\s]+)\s*=\s*"(.*)";')
+			m = p.match(line)
+			if m != None:
+				key = m.group(1).strip()
+				val = m.group(2).strip()
+
+				v = self.Value(val)
+				self.options[key] = v
+
+	# Get an option string.
+	def get(self, key):
+		if self.options[key] != None:
+			return self.options[key].getValue()
+
+		return ""
+
+
+	class Value:
+		def __init__(self, value=None):
+			self.value = value
+
+		def getValue(self):
+			return self.value
+
+
+
+#####
+##### DATABASE STUFF
+#####
+
+import pgdb
+import os
+
+from kconfig import *
+from kreadline import *
+from kout import *
+from kexcept import *
+
+# identifiers for database infos and handlers
+DB_PROFILES="user"
+DB_LOGIN="login"
+DB_PUBKEYS="pkey"
+
+# will contain database infos
+dbs_info = {}
+
+# will contain database handlers
+dbs = {}
+
+# init all databases
+def db_init():
+	global dbs_info
+	global dbs
+
+	dbs[DB_PROFILES] = None
+	dbs[DB_LOGIN] = None
+	dbs[DB_PUBKEYS] = None
+
+	# get database connection info
+	config = KConfig()
+	for key in dbs.keys():
+		dbs_info[key] = {}
+		dbs_info[key]["name"] = config.get("db_" + key + ".name")
+		dbs_info[key]["host"] = config.get("db_" + key + ".host")
+		dbs_info[key]["username"] = config.get("db_" + key + ".admin_username")
+		dbs_info[key]["password"] = config.get("db_" + key + ".admin_password")
+
+	for id in dbs.keys():
+		dbs[id] = pgdb.connect(dsn = dbs_info[id]["host"] + ':' + dbs_info[id]["name"],
+			user=dbs_info[id]["username"], password=dbs_info[id]["password"])
+	
+
+
+# quote and escape sql argument
+# WARNING: uses pgdb._quote() which is an internal function
+def safe_sqlparam(s):
+	return str(pgdb._quote(s))
+
+
+# debug database queries (only if debugging is enabled)
+def sql_debug(query):
+	debug("query: '" + query + "'")
+
+
+# exec query
+def database_exec(dbh, query):
+	cur = dbh.cursor()
+
+	try:
+		cur.execute(query)
+	except pgdb.DatabaseError, e:
+		dbh.rollback()
+		raise ExError(str(e))
+
+
+# returns the first element of the first row
+def database_get_first_element(dbh, query):
+	cur = dbh.cursor()
+
+	try:
+		cur.execute(query)
+	except pgdb.DatabaseError, e:
+		dbh.rollback()
+		raise ExError(str(e))
+
+	# check row count
+	if cur.rowcount == None or cur.rowcount < 1:
+		raise ExError("no row returned")
+
+	# get first row
+	row = cur.fetchone()
+
+	return row[0]
+
+
+
+# is there any row found?
+def database_has_record(dbh, query):
+	cur = dbh.cursor()
+
+	try:
+		cur.execute(query)
+	except pgdb.DatabaseError, e:
+		dbh.rollback()
+		raise ExError(str(e))
+
+	# check row count
+	if cur.rowcount == None or cur.rowcount < 1:
+		return False
+
+	return True
+
+
+
+# returns all rows from query
+def database_find_sql_results(dbh, query):
+	cur = dbh.cursor()
+
+	try:
+		cur.execute(query)
+	except pgdb.DatabaseError, e:
+		dbh.rollback()
+		raise ExError(str(e))
+
+	if cur.rowcount == None or cur.rowcount < 1:
+		return None, None
+
+	field_descs = cur.description
+	res = cur.fetchall()
+
+	return [ field_descs, res ]
+
+
+# check org existance
+def org_exist(id):
+	global dbs
+	query = "select * from organization where org_id=%s" % ( safe_sqlparam(id) )
+	return database_has_record(dbs[DB_PROFILES], query)
+
+def org_check(id):
+	if org_exist(id) != True:
+		raise ExError("Organization id %s does not exist" % ( id ))
+
+# check profile existance
+def prof_exist(id):
+	global dbs
+	query = "select * from profiles where prof_id=%s" % ( safe_sqlparam(id) )
+	return database_has_record(dbs[DB_PROFILES], query)
+
+def prof_check(id):
+	if prof_exist(id) != True:
+		raise ExError("Profile id %s does not exist" % ( id ))
+
+# check email existance - not finished
+#def email_exist(prof_id, email):
+#	global dbs
+#	query = "select * from organization where org_id=%s" % ( safe_sqlparam(id) )
+#	return database_has_record(dbs[DB_PROFILES], query)
+#def email_check(prof_id, email):
+#	if email_exist(prof_id, email) != True:
+#		raise ExError("Email %s does not exist" % ( id ))
+
+
+
+	
+# get profile status
+def sql_getprofstatus(id):
+	global dbs
+
+	prof_check(id)
+
+	query = "select * from get_prof_status(%s);" % (safe_sqlparam(id))
+	sql_debug(query)
+	return database_get_first_element(dbs[DB_PROFILES], query)
+
+
+# get profile name
+def get_org_name(id):
+	global dbs
+
+	org_check(id)
+
+	query = "select name from organization WHERE org_id = %s;" % (safe_sqlparam(id))
+	sql_debug(query)
+	return database_get_first_element(dbs[DB_PROFILES], query)
+
+
+# get profile name
+def get_prof_name(id):
+    global dbs
+
+    prof_check(id)
+
+    query = "select * from get_profile_name(%s);" % (safe_sqlparam(id))
+    sql_debug(query)
+    return database_get_first_element(dbs[DB_PROFILES], query)
+
+
+
+
+# get key status
+def sql_getkeystatus(id):
+	global dbs
+
+	query = "select * from get_key_status(%s);" % (safe_sqlparam(id))
+	sql_debug(query)
+	return database_get_first_element(dbs[DB_PROFILES], query)
+
+
+# set key status
+def sql_setkeystatus(id, status):
+	global dbs
+
+	query = "select set_key_status(%s, %s);" % (safe_sqlparam(id), safe_sqlparam(status))
+	sql_debug(query)
+	database_exec(dbs[DB_PROFILES], query)
+
+
+# adds a primary email to a user
+def sql_addpemail(prof_id, email):
+	global dbs
+
+	query = "select add_primary_email(%s, %s);" % (safe_sqlparam(prof_id), safe_sqlparam(email))
+	sql_debug(query)
+	database_exec(dbs[DB_PROFILES], query)
+
+
+# adds an email or email part
+def sql_addemail(prof_id, email):
+	global dbs
+
+	query = "select add_email(%s, %s);" % (safe_sqlparam(prof_id), safe_sqlparam(email))
+	sql_debug(query)
+	database_exec(dbs[DB_PROFILES], query)
+
+
+# delete an email or email part
+def sql_rmemail(prof_id, email):
+	global dbs
+
+	query = "select del_email(%s, %s);" % (safe_sqlparam(prof_id), safe_sqlparam(email))
+	sql_debug(query)
+	database_exec(dbs[DB_PROFILES], query)
+
+# List all email address for a profile.
+def sql_lsemail(prof_id):
+	global dbs
+
+	query = "select * from email_ls(%s);" % ( safe_sqlparam(prof_id) )
+	sql_debug(query)
+	return database_find_sql_results(dbs[DB_PROFILES], query)
+
+
+
+def sql_addgroup(org_id, group_name):
+	global dbs
+
+	query = "select add_group_profile(%s, %s);" % ( safe_sqlparam(org_id), safe_sqlparam(group_name) )
+	sql_debug(query)
+	return database_get_first_element(dbs[DB_PROFILES], query)
+
+
+def sql_addorg(org_name):
+	global dbs
+
+	query = "select add_org(%s);" % ( safe_sqlparam(org_name) )
+	sql_debug(query)
+	return database_get_first_element(dbs[DB_PROFILES], query)
+
+
+def sql_rmorg(org_id):
+	global dbs
+
+	query = "select del_org(%s);" % ( safe_sqlparam(org_id) )
+	sql_debug(query)
+	database_exec(dbs[DB_PROFILES], query)
+
+
+def sql_lsorg():
+	global dbs
+
+	query = "select * from organization_view;"
+	sql_debug(query)
+	return database_find_sql_results(dbs[DB_PROFILES], query)
+
+
+
+def sql_adduser(org_id, first_name, last_name):
+	global dbs
+
+	query = "select add_user_profile(%s, %s, %s);" % ( safe_sqlparam(org_id), 
+			safe_sqlparam(first_name), safe_sqlparam(last_name) )
+	sql_debug(query)
+	database_exec(dbs[DB_PROFILES], query)
+
+
+
+def sql_rmprofile(prof_id):
+	global dbs
+
+	query = "select del_profile(%s);" % ( safe_sqlparam(prof_id) )
+	sql_debug(query)
+	database_exec(dbs[DB_PROFILES], query)
+
+
+def sql_lsprofiles():
+	global dbs
+
+	query = "select * from profiles_view;"
+	sql_debug(query)
+	return database_find_sql_results(dbs[DB_PROFILES], query)
+
+
+
+
+def sql_addlogin(prof_id, username, password):
+	global dbs
+
+	query = "select add_login(%s, %s, %s);" % ( safe_sqlparam(username), safe_sqlparam(password), safe_sqlparam(prof_id) )
+	sql_debug(query)
+	database_exec(dbs[DB_LOGIN], query)
+
+
+def sql_rmlogin(login):
+	global dbs
+
+	query = "select del_login(%s);" % ( safe_sqlparam(login) )
+	sql_debug(query)
+	database_exec(dbs[DB_LOGIN], query)
+
+
+def sql_lslogin():
+	global dbs
+
+	query = "select * from login_view;"
+	sql_debug(query)
+	return database_find_sql_results(dbs[DB_LOGIN], query)
+
+def sql_setkey(prof_id, key_id):
+	global dbs
+
+	query = "select set_key(%s, %s);" % ( safe_sqlparam(prof_id), safe_sqlparam(key_id) )
+	sql_debug(query)
+	database_exec(dbs[DB_PROFILES], query)
+
+def sql_disownkey(prof_id):
+	global dbs
+
+	query = "select unset_key(%s);" % ( safe_sqlparam(prof_id) )
+	sql_debug(query)
+	database_exec(dbs[DB_PROFILES], query)
+
+def sql_lskeys():
+    global dbs
+
+    query = "select * from pkey_view;"
+    sql_debug(query)
+    return database_find_sql_results(dbs[DB_PUBKEYS], query)
+
+def commit():
+	global dbs
+
+	for id in dbs.keys():
+		dbs[id].commit()
+
+	debug("commited changes.")
+
+
+
+
+
+#####
+##### SUBPROCESS
+#####
+
+import subprocess
+
+# locals
+from kout import *
+from kexcept import *
+
+# not complete - allows to run a program, get return code, and debug stdout and stderr
+# no stdin yet
+class KPopen:
+	command = None
+	proc = None
+	stdout = None
+	stderr = None
+	return_code = None
+
+	# if you want send EOF, set stdin_data to "" and not None
+	def __init__(self, stdin_data, *cmd):
+		self.stdin = stdin_data
+		# accept an array or a list of several parameters
+		if type(cmd[0]) == list:
+			cmd = cmd[0]
+		try:
+			self.command = cmd
+			self.proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+			self.stdout, self.stderr = self.proc.communicate(stdin_data)
+			self.return_code = self.proc.returncode
+		except OSError, e:
+			self.debug_result()
+			raise ExError("ERROR: " + str(e))
+
+		self.debug_result()
+
+
+	def debug_result(self):
+			debug("command: %s" % str(self.command))
+			debug("return code: %s" % str(self.return_code))
+			debug("stdin:")
+			debug(str(self.stdin))
+			debug("stdout:")
+			debug(str(self.stdout))
+			debug("stderr:")
+			debug(str(self.stderr))
+
+
+
+#####
+##### COMMANDS AND COMMANDS HELPERS
+#####
+
+from kdatabase import *
+from kreadline import *
+from kpopen import *
+
+# will be used later for quoting
+def aaa(s):
+	return s
+
+def cmd_getprofstatus(id):
+	val = sql_getprofstatus(id)
+	out("Profile ID %s status is %s" % (aaa(id), aaa(val)))
+	return 0
+
+def cmd_getkeystatus(id):
+	val = sql_getkeystatus(id)
+	out("Key ID %s owner status is %s" % (aaa(id), aaa(val)))
+	return 0
+
+def cmd_setkeystatus(id, status):
+	sql_setkeystatus(id, status)
+	commit()
+	out("Status of the owner of key %s set to %s" % (aaa(id), aaa(status)))
+	return 0
+
+
+
+def cmd_addpemail(prof_id, email):
+	prof_name = get_prof_name(prof_id)
+
+	sql_addpemail(prof_id, email)
+	commit()
+	out("Added primary email address %s to %s" % ( aaa(email), aaa(prof_name) ))
+	return 0
+
+def cmd_addemail(prof_id, email):
+	prof_name = get_prof_name(prof_id)
+
+	sql_addemail(prof_id, email)
+	commit()
+	out("Added secondary email address %s to %s" % ( aaa(email), aaa(prof_name) ))
+	return 0
+
+def cmd_rmemail(prof_id, email):
+	prof_name = get_prof_name(prof_id)
+
+	sql_rmemail(prof_id, email)
+	commit()
+	out("Removed email address %s from %s" % ( aaa(email), aaa(prof_name) ))
+	return 0
+
+def cmd_lsemail(prof_id):
+	field_descs, res = sql_lsemail(prof_id)
+	if res == None:
+		#out("no emails")
+		pass
+	else:
+		print_tabbed_results(field_descs, res)
+	return 0
+
+
+
+def cmd_addgroup(org_id, group_name):
+	org_name = get_org_name(org_id)
+	group_id = sql_addgroup(org_id, group_name)
+	commit()
+	out("Added group %s to organization %s" % ( aaa(group_name), aaa(org_name) ))
+	return 0
+
+
+
+def cmd_addorg(org_name):
+	org_id = sql_addorg(org_name)
+	commit()
+	out("Added organization no: %s" % ( aaa(org_id) ))
+	return 0
+
+def cmd_rmorg(org_id):
+	sql_rmorg(org_id)
+	commit()
+	out("Deleted organization no: %s" % ( aaa(org_id) ))
+	return 0
+
+def cmd_lsorg():
+	field_descs, res = sql_lsorg()
+	if res == None:
+		#out("no organizations")
+		pass
+	else:
+		print_tabbed_results(field_descs, res)
+	return 0
+
+
+
+def cmd_adduser(org_id, first_name, last_name):
+	sql_adduser(org_id, first_name, last_name)
+	commit()
+	out("Added user %s with profile ID %s" % ( aaa(first_name + " " + last_name), aaa(org_id)))
+	return 0
+
+def cmd_rmprofile(prof_id):
+	sql_rmprofile(prof_id)
+	commit()
+	out("Deleted profile no: %s" % ( aaa(prof_id) ))
+	return 0
+
+
+def cmd_lsprofiles():
+	field_descs, res = sql_lsprofiles()
+	if res == None:
+		#out("no profiles")
+		pass
+	else:
+		print_tabbed_results(field_descs, res)
+	return 0
+
+
+def cmd_addlogin(prof_id, username, password=None):
+	if password == None:
+		password = askpassword()
+	sql_addlogin(prof_id, username, password)
+	commit()
+	out("Login %s added to profile %s" % ( aaa(username), aaa(prof_id) ))
+	return 0
+
+
+def cmd_rmlogin(login):
+	sql_rmlogin(login)
+	commit()
+	out("Login %s removed" % ( aaa(login) ))
+	return 0
+
+
+def cmd_lslogin():
+	field_descs, res = sql_lslogin()
+	if res == None:
+		#out("no logins")
+		pass
+	else:
+		print_tabbed_results(field_descs, res)
+	return 0
+
+def cmd_setkey(prof_id, key_id):
+	sql_setkey(prof_id, key_id)
+	commit()
+	out("Set key no %s to profile %s" % (aaa(prof_id), aaa(key_id) ))
+	return 0
+
+def cmd_disownkey(prof_id):
+	sql_disownkey(prof_id)
+	commit()
+	out("Unset key of profile %s" % ( aaa(prof_id) ))
+	return 0
+
+def cmd_lskeys():
+	field_descs, res = sql_lskeys()
+	if res == None:
+		#out("no keys")
+		pass
+	else:
+		print_tabbed_results(field_descs, res)
+	return 0
+
+
+
+### WE REDIRECT ALL FUNCTIONS THAT WORK WITH KEY FILES TO OLD KCTL ###
+
+# alpha python key class in this directory but unused right now
+
+# Generate two pairs of keys.
+def cmd_genkeys(type, key_id, key_filename, owner):
+	return run_external(["kctl", "genkeys", type, key_id, key_filename, owner])
+
+# Import a key file.
+def cmd_importkey(file):
+	return run_external(["kctl", "importkey", file])
+
+# Change the internal key id of a key.
+def cmd_keysetid(in_file, id, out_file):
+	return run_external(["kctl", "keysetid", in_file, id, out_file])
+
+# Change the internal key name of a key.
+def cmd_keysetname(in_file, name, out_file):
+	return run_external(["kctl", "keysetname", in_file, name, out_file])
+
+# Print the information contained in a key.
+def cmd_printkey(file):
+	return run_external(["kctl", "printkey", file])
+
+
+
+### HELPERS ###
+
+def run_external(cmd):
+	proc = KPopen("", cmd)
+	out_raw(proc.stdout)
+	err_raw(proc.stderr)
+	return proc.return_code
+
+def print_tabbed_results(field_descs, res):
+	# print headers (field_descs)
+	if field_descs != None and res != None:
+		for field_desc in field_descs:
+			out_raw("%s\t" % field_desc[0]) # field_desc[0] --> field name
+		out("")
+
+		for row in res:
+			for field_value in row:
+				out_raw("%s\t" % field_value)
+			out("")
+
+def askpassword():
+	pw = None
+	while pw == None or pw == "":
+		pw = input_prompt("User password:")
+	return pw
+
+
+
+#####
+##### MAIN
+#####
+
+from sys import stdout, stderr
+import os, sys, string, shutil, ConfigParser, readline, re, time, random, getopt
+
+from kreadline import *
+from kout import *
+from kdatabase import *
+from kcommands import *
+from kexcept import *
+
+def parse_line(line):
+    buf = ""
+    res = []
+
+    cur_sep = None
+    in_string = False
+
+    for char in line:
+        char_is_space = False
+        char_is_quote = False
+        char_is_sep = False
+
+        p = re.compile(r'\s')
+        if p.match(char):
+            char_is_space = True
+
+        if char == '"' or char == "'":
+            char_is_quote = True
+
+        if char_is_space or char_is_quote:
+            char_is_sep = True
+
+        if not in_string:
+            if char_is_sep:
+                cur_sep = char
+                if char_is_space:
+                    cur_sep = ' '
+                if char_is_quote:
+                    in_string = True
+                continue # skip to next char
+            in_string = True
+
+        if in_string:
+            if str(char) == str(cur_sep):
+                res = res + [ buf ]
+                cur_sep = None
+                buf = ""
+                in_string = False
+                continue
+
+        buf = buf + char
+        if cur_sep == None:
+            cur_sep = ' '
+
+    if in_string:
+        if cur_sep == ' ':
+            res = res + [ buf ]
+        else:
+            raise ExError("Could not find ending quote.")
+
+    return res
+
+
+
+
+# This class setups command completion in readline.
+class readline_completer:
+	def __init__(self, words):
+		self.words = words
+		self.prefix = None
+	
+	def complete(self, prefix, index):
+		if prefix != self.prefix:
+			self.matching_words = [ w for w in self.words if w.startswith(prefix) ]
+			self.prefix = prefix
+		try:
+			return self.matching_words[index]
+		except IndexError:
+			return None
+		
+
+# command does not exist, 'None' is returned.
+def get_cmd_desc(cmd):
+	if not cmd: return None
+
+	for i in cmd_list_def:
+		if i[0] == cmd: return i
+	
+	return None
+
+
+def max_def_len(i):
+	max = 0
+	for cmd in cmd_list_def:
+		try:
+			if len(cmd[i]) > max:
+				max = len(cmd[i])
+		except:
+			continue
+	return max
+
+# This function prints information about the usage of the specified command on
+# the stream specified.
+def print_cmd_usage(cmd_desc, stream):
+	stream.write(cmd_desc[0].ljust(max_def_len(0), " "))
+	if cmd_desc[3]: stream.write(" " + cmd_desc[3].ljust(max_def_len(3), " "))
+	else: stream.write(" " + " ".ljust(max_def_len(3), " "))
+	stream.write(" # " + cmd_desc[4].ljust(max_def_len(4), " ") + "\n")
+
+
+# This function prints the list of commands supported.
+def print_command_list():
+	for i in cmd_list_def:
+		if i[0] == "": out(""); continue
+		print_cmd_usage(i, stdout)
+	
+
+# This function prints the program usage.
+def print_usage(stream):
+	stream.write("Usage: kctl                                   # interactive mode\n" +
+				 "       kctl -h                                # prints this message\n" +
+				 "       kctl help [command]                    # get help on one or all commands\n" +
+				 "       kctl <command> [arg1] [arg2]..[argN]   # run command\n" +
+				 "\n")
+	
+	
+def cmd_help(*args):
+	
+	# Print the command list.
+	if len(args) == 0: print_command_list(); return 0
+	
+	# Print information about each command.
+	for i in args:
+		cmd_desc = get_cmd_desc(i)
+		if (cmd_desc == None): out(i + ": No such command."); continue
+		print_cmd_usage(cmd_desc, stdout)
+	
+	return 0
+
+
+ 
+
+	
+# This function should be called to run a command. This function must be passed
+# a list containing the command name and its arguments. The function returns 0
+# if everything went well, 1 if the command aborted early because the input was
+# wrong or 2 if an exception was thrown during the execution of the command.
+def run_command(cmd_line):
+
+	# Get the command name.
+	cmd = cmd_line.pop(0)
+	if cmd == "": err("Empty command specified."); return 1
+	
+	# Find the command in the command list.
+	cmd_desc = get_cmd_desc(cmd)
+	if cmd_desc == None:
+		err("This command does not exist.\nUse 'help' to list available commands.")
+		return 1
+
+	# Check if the number of arguments is correct.
+	if int(cmd_desc[1]) != -1:
+		if len(cmd_line) < cmd_desc[1] or len(cmd_line) > cmd_desc[2]:
+			print_cmd_usage(cmd_desc, stderr)
+			return 1;
+
+	# Run the command.
+	try:
+		cmd_handler = eval("cmd_" + cmd)
+		return cmd_handler(*cmd_line)
+		print "GFSDGDGDFGDGDF"
+	
+	except KeyboardInterrupt:
+		err("User cancelled.")
+		return 1
+
+	except Exception, e:
+		err("Error: '%s'." % str(e))
+		return 2
+	
+
+# This function initializes the program's state.
+def kctl_init():
+	global cmd_list_def
+
+	cmd_list_def = [
+		# get help
+		[ "help", -1, -1, "[<param1>, <param2>, ...]", "Gives help on following commands." ],
+
+		# List user logins. 
+		[ "lslogin", 0, 0, "", "List all login currently in the database." ],
+
+		# Add an user login. 
+		[ "addlogin", 2, 3, "<profile_id> <login> [password]", "Add an user login in the database." ],
+
+		# Remove an user login. 
+		[ "rmlogin", 1, 1, "<login>", "Remove an user login from the database." ],
+
+		[ "" ],
+
+		# List all organizations. 
+		[ "lsorg", 0, 0, "", "List all organizations currently in the database." ],
+
+		# Add an organization. 
+		[ "addorg", 1, 1, "<name>", "Add a new organization in the database." ],
+
+		# Remove an organization. 
+		[ "rmorg", 1, 1, "<org_id>", "Remove a organization from the database." ],
+
+		[ "" ],
+
+		# List all profiles. 
+		[ "lsprofiles", 0, 0, "", "List all user and group profiles currently in the database." ],
+
+		# Add an user profile. 
+		[ "adduser", 3, 3, "<org_id> <first_name> <last_name>", "Add a new user profile in the database." ],
+
+		# Add a group profile. 
+		[ "addgroup", 2, 2, "<org_id> <group_name>", "Add a new group profile in the database." ],
+
+		# Remove a profile. 
+		[ "rmprofile", 1, 1, "<profile_id>", "Remove a group profile." ],
+
+		# Add a primary email to a profile. 
+		[ "addpemail", 2, 2, "<profile_id> <email>", "Add a primary email address to a profile." ],
+
+		# Add a primary email to a profile. 
+		[ "addemail", 2, 2, "<profile_id> <email>", "Add a secondary email address to a profile." ],
+
+
+
+		# List emails for a profile. 
+		[ "lsemail", 1, 1, "<profile_id>", "List emails or emails parts for a group." ],
+
+		# Remove a email from a profile. 
+		[ "rmemail", 2, 2, "<profile_id> <email>", "Remove an email or an email part from a profile." ],
+
+		[ "" ],
+
+		# List all key in the local database. 
+		[ "lskeys", 0, 0, "", "List all keys in database + profile they are associated with." ],
+
+		# Set a key to a profile. 
+		[ "setkey", 2, 2, "<profile_id> <key_id>", "Set a key ID to a profile." ],
+
+		# disown a key from a profile 
+		[ "disownkey", 1, 1, "<profile_id>", "Disown a key from a profile." ],
+	
+		# Generate two pairs of keys. 
+		[ "genkeys", 4, 4, "(enc|sig|both) <key_id> <keyfile_name> <owner>", 
+			"Generate a group of key of ID 'keyid' owned by 'owner'" ],
+
+		# Import a key file. 
+		[ "importkey", 1, 1, "<file>", "Import a key file fed from 'file'." ],
+
+		[ "keysetid", 3, 3, "<in_file> <id> <out_file>", "Change the internal key ID of a key." ],
+	
+		[ "keysetname", 3, 3, "<in_file> <name> <out_file>", "Change the internal key name of a key." ],
+
+		[ "printkey", 1, 1, "<key_file>", "Print the information contained in a key." ],
+
+		[ "setkeystatus", 2, 2, "<key_id> <status>", "Set the status integer of a key ID owner." ],
+
+		[ "getkeystatus", 1, 1, "<key_id>", "Get the status integer of a key ID owner." ],
+
+		[ "getprofstatus", 1, 1, "<profile_id>", "Get the status integer of a profile ID." ],
+	]
+	
+	# Setup readline.
+	cmd_name_list = []
+	for i in cmd_list_def:
+		if i[0]:
+			cmd_name_list.append(i[0])
+	completer = readline_completer(cmd_name_list)
+	readline.parse_and_bind("tab: complete")
+	readline.set_completer(completer.complete)
+
+	
+
+def main():
+	kctl_init()
+
+	db_init()
+
+	# Parse the options.
+	try:
+		 (options, cmd_args) = getopt.gnu_getopt(sys.argv[1:], "hc:")
+		 
+	except Exception, e:
+		err("Error: '%s'." % str(e))
+		print_usage(stderr)
+		sys.exit(1)
+	
+	# Handle the options.
+	for opt in options:
+		if opt[0] == '-h':
+			print_usage(stdout)
+			sys.exit(0)
+	
+	# Run a single command from the command line.
+	if len(cmd_args):
+		sys.exit(run_command(cmd_args))
+
+	else:
+		# Loop processing commands.
+		while 1:
+	
+			# Wait for command.
+			try:
+				prompt = "kctl"
+				#cmd_line = string.split(raw_input(prompt + "> "))
+				line = input_prompt(prompt + "> ")
+				try:
+					cmd_line = parse_line(line)
+				except ExError, e:
+					out(str(e))
+					continue
+
+				if len(cmd_line) == 0:
+					continue
+	
+			except KeyboardInterrupt:
+				out("")
+				sys.exit(0)
+	
+			except EOFError:
+				out("")
+				sys.exit(0)
+
+			except ExError, e:
+				err(str(e))
+
+			# Run the command.
+			try:
+				run_command(cmd_line)
+			except ExError, e:
+				err(str(e))
+			except Exception, e:
+				err(str(e))
+	
+			# Add an empty line so that it looks pretty.
+			out("")
+	
+
+main()
+
+

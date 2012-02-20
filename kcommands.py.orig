@@ -1,0 +1,676 @@
+<<<<<<< /home/fdgonthier/tmp/kcommands.py~base.RQ6r13
+=======
+# -*- mode: python; python-indent: 4; tab-width: 4 -*-
+
+>>>>>>> /home/fdgonthier/tmp/kcommands.py~other.ktLFVS
+#####
+##### COMMANDS AND COMMANDS HELPERS
+#####
+
+from kparams import *
+from kdatabase import *
+from kreadline import *
+from kpopen import *
+<<<<<<< /home/fdgonthier/tmp/kcommands.py~base.RQ6r13
+=======
+from kkeys import *
+
+def scriptable_out(s):
+	if kparams_get("scriptable"):
+		out(s)
+>>>>>>> /home/fdgonthier/tmp/kcommands.py~other.ktLFVS
+
+# will be used later for quoting
+def aaa(s):
+	return s
+
+<<<<<<< /home/fdgonthier/tmp/kcommands.py~base.RQ6r13
+=======
+# return a string version... could be used differently later
+def bbb(s):
+	return str(s)
+
+<<<<<<< /home/repos/kctl/kcommands.py.orig.2839717718
+>>>>>>> /home/fdgonthier/tmp/kcommands.py~other.ktLFVS
+||||||| /home/fdgonthier/tmp/kcommands.py~base.pWYaS6
+=======
+def cmd_selftest():
+	db_conn_all()
+	out("Could connect to all databases.")
+	return 0
+
+>>>>>>> /home/fdgonthier/tmp/kcommands.py~other.5Uev03
+def cmd_getprofstatus(id):
+	val = sdb_getprofstatus(id)
+<<<<<<< /home/fdgonthier/tmp/kcommands.py~base.RQ6r13
+=======
+	scriptable_out("%s" % ( bbb(val) ))
+>>>>>>> /home/fdgonthier/tmp/kcommands.py~other.ktLFVS
+	out("Profile ID %s status is %s" % (aaa(id), aaa(val)))
+	return 0
+
+def cmd_getkeystatus(id):
+	val = sdb_getkeystatus(id)
+<<<<<<< /home/fdgonthier/tmp/kcommands.py~base.RQ6r13
+=======
+	scriptable_out("%s" % ( bbb(val) ))
+>>>>>>> /home/fdgonthier/tmp/kcommands.py~other.ktLFVS
+	out("Key ID %s owner status is %s" % (aaa(id), aaa(val)))
+	return 0
+
+def cmd_setkeystatus(id, status):
+	sdb_setkeystatus(id, status)
+	db_commit()
+	out("Status of the owner of key %s set to %s" % (aaa(id), aaa(status)))
+	return 0
+
+def cmd_addpemail(prof_id, email):
+	prof_name = sdb_get_prof_name(prof_id)
+
+	sdb_addpemail(prof_id, email)
+	db_commit()
+	out("Added primary email address %s to %s" % ( aaa(email), aaa(prof_name) ))
+	return 0
+
+def cmd_addemail(prof_id, email):
+	prof_name = sdb_get_prof_name(prof_id)
+
+	sdb_addemail(prof_id, email)
+	db_commit()
+	out("Added secondary email address %s to %s" % ( aaa(email), aaa(prof_name) ))
+	return 0
+
+def cmd_rmemail(prof_id, email):
+	prof_name = sdb_get_prof_name(prof_id)
+
+	sdb_rmemail(prof_id, email)
+	db_commit()
+	out("Removed email address %s from %s" % ( aaa(email), aaa(prof_name) ))
+	return 0
+
+def cmd_lsemail(prof_id):
+	field_descs, res = sdb_lsemail(prof_id)
+	if res == None:
+		#out("no emails")
+		pass
+	else:
+		print_tabbed_results(field_descs, res)
+	return 0
+
+
+
+def cmd_addgroup(org_id, group_name):
+	org_name = sdb_get_org_name(org_id)
+	group_id = sdb_addgroup(org_id, group_name)
+	db_commit()
+<<<<<<< /home/fdgonthier/tmp/kcommands.py~base.RQ6r13
+	out("Added group %s to organization %s" % ( aaa(group_name), aaa(org_name) ))
+=======
+	scriptable_out("%s" % ( bbb(group_id) ))
+	#out("Added group id %s (name %s) to organization %s" % ( aaa(group_id), aaa(group_name), aaa(org_name) ))
+	out("Added group %s to organization %s." % ( aaa(group_id), aaa(org_id) ))
+>>>>>>> /home/fdgonthier/tmp/kcommands.py~other.ktLFVS
+	return 0
+
+
+
+def cmd_addorg(org_name):
+	org_id = sdb_addorg(org_name)
+	db_commit()
+<<<<<<< /home/fdgonthier/tmp/kcommands.py~base.RQ6r13
+	out("Added organization no: %s" % ( aaa(org_id) ))
+=======
+	scriptable_out("%s" % ( bbb(org_id) ))
+	out("Added organization no: %s." % ( aaa(org_id) ))
+>>>>>>> /home/fdgonthier/tmp/kcommands.py~other.ktLFVS
+	return 0
+
+def cmd_rmorg(org_id):
+	sdb_rmorg(org_id)
+	db_commit()
+	out("Deleted organization no: %s" % ( aaa(org_id) ))
+	return 0
+
+def cmd_setorgforwardto(org_id, forward_to):
+	sdb_setorgforwardto(org_id, forward_to)
+	db_commit()
+	out("Set forward_to for org_id '%s' to '%s'" % ( aaa(org_id), aaa(forward_to) ))
+	return 0
+
+def cmd_lsorg():
+	field_descs, res = sdb_lsorg()
+	if res == None:
+		#out("no organizations")
+		pass
+	else:
+		print_tabbed_results(field_descs, res)
+	return 0
+
+
+
+def cmd_adduser(org_id, first_name, last_name):
+<<<<<<< /home/fdgonthier/tmp/kcommands.py~base.RQ6r13
+	sdb_adduser(org_id, first_name, last_name)
+=======
+	prof_id = sdb_adduser(org_id, first_name, last_name)
+>>>>>>> /home/fdgonthier/tmp/kcommands.py~other.ktLFVS
+	db_commit()
+<<<<<<< /home/fdgonthier/tmp/kcommands.py~base.RQ6r13
+=======
+	scriptable_out("%s" % ( bbb(prof_id) ))
+>>>>>>> /home/fdgonthier/tmp/kcommands.py~other.ktLFVS
+	out("Added user %s with profile ID %s" % ( aaa(first_name + " " + last_name), aaa(org_id)))
+	return 0
+
+def cmd_rmprofile(prof_id):
+	sdb_rmprofile(prof_id)
+	db_commit()
+	out("Deleted profile no: %s" % ( aaa(prof_id) ))
+	return 0
+
+
+def cmd_lsprofiles():
+	field_descs, res = sdb_lsprofiles()
+	if res == None:
+		#out("no profiles")
+		pass
+	else:
+		print_tabbed_results(field_descs, res)
+	return 0
+
+
+<<<<<<< /home/fdgonthier/tmp/kcommands.py~base.RQ6r13
+def cmd_addlogin(prof_id, username, password=None):
+=======
+def cmd_addlogin(prof_id, org_id, username, password=None):
+>>>>>>> /home/fdgonthier/tmp/kcommands.py~other.ktLFVS
+	if password == None:
+		password = askpassword()
+	org_id = sdb_getprofileorg(prof_id)
+	sdb_addlogin(org_id, prof_id, username, password)
+	db_commit()
+	out("Login %s added to profile %s (organization %s)" % ( aaa(username), aaa(prof_id), aaa(org_id) ))
+	return 0
+
+
+def cmd_rmlogin(login):
+	sdb_rmlogin(login)
+	db_commit()
+	out("Login %s removed" % ( aaa(login) ))
+	return 0
+
+
+def cmd_lslogin():
+	field_descs, res = sdb_lslogin()
+	if res == None:
+		#out("no logins")
+		pass
+	else:
+		print_tabbed_results(field_descs, res)
+	return 0
+
+def cmd_setkey(prof_id, key_id):
+	sdb_setkey(prof_id, key_id)
+	db_commit()
+	out("Set key no %s to profile %s" % (aaa(prof_id), aaa(key_id) ))
+	return 0
+
+def cmd_disownkey(prof_id):
+	sdb_disownkey(prof_id)
+	db_commit()
+	out("Unset key of profile %s" % ( aaa(prof_id) ))
+	return 0
+
+def cmd_lskeys():
+	field_descs, res = sdb_lskeys()
+	if res == None:
+		#out("no keys")
+		pass
+	else:
+		print_tabbed_results(field_descs, res)
+	return 0
+
+def cmd_rmkeys(key_id):
+	# should check if key is bound to a users or groups
+<<<<<<< /home/fdgonthier/tmp/kcommands.py~base.RQ6r13
+	sdb_delpubkeys(key_id)
+	sdb_delprivkeys(key_id)
+=======
+	pubexists = sdb_pubkeyexists(key_id)
+	privexists = sdb_privkeyexists(key_id)
+	if not pubexists and not privexists:
+		raise ExError("Key id '%s' does not exist." % ( key_id ))
+	if pubexists:
+		sdb_delpubkeys(key_id)
+	if privexists:
+		sdb_delprivkeys(key_id)
+>>>>>>> /home/fdgonthier/tmp/kcommands.py~other.ktLFVS
+	db_commit()
+	out("Delete public and private keys %s" % ( aaa(key_id) ))
+	return 0
+
+<<<<<<< /home/fdgonthier/tmp/kcommands.py~base.RQ6r13
+=======
+def cmd_purgekoskdn(kdn):
+	# check if kdn is found
+	# on kos, org name is kdn
+	try:
+		org_id = sdb_org_id_by_kdn(kdn)
+	except:
+		raise ExError("kdn not found.")
+	# get keys associated to this org
+	field_descs, res = sdb_org_keys(org_id)
+	keys = []
+	if field_descs != None and res != None:
+		for row in res:
+			if row[0] != None:
+				keys.append(row[0])
+	# remove duplicates
+	keyids = list(set(keys))
+	# delete keys
+	for key_id in keys:
+		if sdb_pubkeyexists(key_id):
+			sdb_delpubkeys(key_id)
+		if sdb_privkeyexists(key_id):
+			sdb_delprivkeys(key_id)
+	# delete all profiles associated to that kdn (org)
+	field_descs, res = sdb_getorgprofiles(org_id)
+	if field_descs != None and res != None:
+		for row in res:
+			sdb_rmprofile(row[0]) # row[0] => prof_id
+	# delete org
+	sdb_rmorg(org_id)
+	db_commit()
+	out("Purged KOS kdn '%s'" % ( aaa(kdn) ))
+	return 0
+
+>>>>>>> /home/fdgonthier/tmp/kcommands.py~other.ktLFVS
+def cmd_purgeorg(org_id):
+	try:
+		org_name = sdb_getorgname(org_id)
+	except NoRow:
+		raise ExError("organization not found.")
+	field_descs, res = sdb_getorgprofiles(org_id)
+	if field_descs != None and res != None:
+		for row in res:
+			sdb_rmprofile(row[0]) # row[0] => prof_id
+	sdb_rmorg(org_id)
+	db_commit()
+	out("Purged organization no: %s (%s)" % ( aaa(org_id), aaa(org_name) ))
+	return 0
+
+<<<<<<< /home/repos/kctl/kcommands.py.orig.2839717718
+<<<<<<< /home/fdgonthier/tmp/kcommands.py~base.RQ6r13
+=======
+def cmd_setresellerseats(counttotal, best_before):
+	sdb_set_reseller_seats(counttotal, best_before)
+||||||| /home/fdgonthier/tmp/kcommands.py~base.pWYaS6
+def cmd_setresellerseats(counttotal, best_before):
+	sdb_set_reseller_seats(counttotal, best_before)
+=======
+def cmd_setseatsallocation(p_org_id, org_id, number):
+	if p_org_id == "":
+		p_org_id = None
+	if int(number) < 0:
+		err("Invalid parameter. Number should be > 0.")
+		return 1
+	available = get_seats_available_to_allocate(p_org_id, org_id)
+	if int(number) > available:
+		err("Not enough seats available for allocation: org %s has only %s seats available for allocation." % ( aaa(p_org_id), str(available) ) )
+		return 1
+	sdb_setseatsallocation(p_org_id, org_id, number)
+>>>>>>> /home/fdgonthier/tmp/kcommands.py~other.5Uev03
+	db_commit()
+	out("Set usable seats count to %s for organization %s" % ( aaa(number), aaa(org_id) ))
+	return 0
+
+def cmd_freeloginseat(org_id, username):
+	sdb_freeloginseat(org_id, username)
+	db_commit()
+	out("Freed seat used by username %s, org %s" % ( aaa(username), aaa(org_id) ))
+	return 0
+
+def cmd_lsseatsallocation():
+	field_descs, res = sdb_lsseatsallocation()
+	if res == None:
+		pass
+	else:
+		print_tabbed_results(field_descs, res)
+	return 0
+
+def cmd_lsseatsorg(org_id):
+	field_descs, res = sdb_lsseatsorg(org_id)
+	if res == None:
+		pass
+	else:
+		print_tabbed_results(field_descs, res)
+	return 0
+
+def cmd_setorglicense(kdn, license_file):
+<<<<<<< /home/repos/kctl/kcommands.py.orig.2839717718
+    f = open(license_file, "r")
+    lic = f.read()
+    f.close()
+    sdb_set_org_license(kdn, lic)
+    out("Set license file %s to KDN %s" % ( license_file, aaa(kdn) ))
+    db_commit()  
+>>>>>>> /home/fdgonthier/tmp/kcommands.py~other.ktLFVS
+||||||| /home/fdgonthier/tmp/kcommands.py~base.pWYaS6
+    f = open(license_file, "r")
+    lic = f.read()
+    f.close()
+    sdb_set_org_license(kdn, lic)
+    out("Set license file %s to KDN %s" % ( license_file, aaa(kdn) ))
+    db_commit()  
+=======
+	f = open(license_file, "r")
+	lic = f.read()
+	f.close()
+	sdb_set_org_license(kdn, lic)
+	out("Set license file %s to KDN %s" % ( license_file, aaa(kdn) ))
+	db_commit()  
+>>>>>>> /home/fdgonthier/tmp/kcommands.py~other.5Uev03
+
+class DeleteProfile(Exception):
+	def __init__(self, err_msg):
+		self.err_msg=err_msg
+	def __str__(self):
+		return repr(self.err_msg)
+
+def cmd_cleandb(mode):
+	if not (mode == "check" or mode == "clean"):
+		raise ExError("bad parameter")
+
+	# PROFILES CHECKING / CLEANING
+	for profile in sdb_profiles_find():
+		prof_id = profile["prof_id"]
+		user_id = profile["user_id"]
+		group_id = profile["group_id"]
+		prof_type = profile["prof_type"]
+		key_id = profile["key_id"]
+
+		errors = []
+
+
+		# no key associated
+		if not key_id:
+			errors.append("profile %s has no key set" % ( str(prof_id) ))
+		# invalid key
+		elif not sdb_key_valid(key_id):
+			errors.append("profile %s has an invalid key (%s)" % ( str(prof_id), str(key_id) ))
+
+
+		# invalid type of profile
+		if prof_type != "U" and prof_type != "G":
+			errors.append("profile %s has an invalid type '%s'" % ( str(prof_id), str(prof_type) ))
+
+		# profile is a local user
+		elif prof_type == "U":
+			# check if login found
+			if not sdb_login_find(prof_id):
+				errors.append("profile %s has no login associated" % ( str(prof_id) ))
+
+			
+			if not user_id:
+				errors.append("profile %s has no user profile id set" % ( str(prof_id) ))
+			elif not sdb_user_profile_valid(user_id):
+				errors.append("profile %s has an invalid user profile associated" % ( str(prof_id) ))
+			elif not sdb_email_primary_find(user_id):
+				errors.append("profile %s has no primary email associated" % ( str(prof_id) ))
+		# profile is a group
+		elif prof_type == 'G':
+			# check if group specified and valid
+			if not group_id:
+				errors.append("profile %s has no group profile id set" % ( str(prof_id) ))
+			elif not sdb_group_profile_valid(group_id):
+				errors.append("profile %s has an invalid group profile associated" % ( str(prof_id) ))
+			else:
+				# got a valid group - check ldap_group and email_parts
+				# disabled - scrary
+				pass
+				if not sdb_ldap_group_find(group_id):
+					errors.append("profile %s has no ldap group associated" % ( str(prof_id) ))
+				if not sdb_email_part_find(group_id):
+					errors.append("profile %s has no email part associated" % ( str(prof_id) ))
+
+		if len(errors):
+			out("\n".join(errors))
+			if mode == "check":
+				out("WARNING: WOULD PURGE PROFILE %s" % ( prof_id ))
+			if mode == "clean":
+				out("WARNING: PURGING PROFILE %s" % ( prof_id ))
+				sdb_rmprofile(prof_id)
+
+
+	# LOGINS CHECKING / CLEANING
+	for login in sdb_logins_find():
+		errors = []
+		user_name = login["user_name"]
+		prof_id = login["prof_id"]
+
+		errors = []
+
+		if not prof_id:
+			errors.append("login %s has no profile associated" % ( str(user_name) ))
+		elif not sdb_profile_find(prof_id):
+			errors.append("login %s has an invalid profile id associated" % ( str(user_name) ))
+	
+		if len(errors) > 0:
+			out("\n".join(errors))
+			if mode == "check":
+				out("WARNING: WOULD PURGE LOGIN %s" % ( user_name ))
+			if mode == "clean":
+				out("WARNING: PURGING LOGIN %s" % ( user_name ))
+				sdb_rmlogin(user_name)
+
+	if mode == "clean":
+		db_commit()
+		out("tbxsosd database clean.")
+	return 0
+
+
+
+
+### WE REDIRECT ALL FUNCTIONS THAT WORK WITH KEY FILES TO OLD KCTL ###
+
+# alpha python key class in this directory but unused right now
+
+# Generate two pairs of keys.
+def cmd_genkeys(type, key_id, key_filename, owner):
+	return run_external_kctlbin(["genkeys", type, key_id, key_filename, owner])
+
+def cmd_exportkey(key_id, key_type, out_file):
+    if key_type == "sig_pkey":
+        s = sdb_exportpubkey("sig", key_id)
+    elif key_type == "enc_pkey":
+        s = sdb_exportpubkey("enc", key_id)
+    elif key_type == "sig_skey":
+        s = sdb_exportprivkey("sig", key_id)
+    elif key_type == "enc_skey":
+        s = sdb_exportprivkey("enc", key_id)
+    key = Key(key = {"owner" : s["owner_name"], 
+                     "data" : s["key_data"],
+                     "type" : key_type,
+                     "id" : s["key_id"]},)
+    key.save(out_file);
+    return 0
+
+# Import a key file.
+<<<<<<< /home/fdgonthier/tmp/kcommands.py~base.RQ6r13
+=======
+#def cmd_importkey(file):
+#	return run_external_kctlbin(["importkey", file])
+>>>>>>> /home/fdgonthier/tmp/kcommands.py~other.ktLFVS
+def cmd_importkey(file):
+<<<<<<< /home/fdgonthier/tmp/kcommands.py~base.RQ6r13
+	return run_external_kctlbin(["importkey", file])
+=======
+	key = Key(file=file)
+	if key.type == SIG_PKEY:
+		sdb_importpubkey("sig_pkey", key.id, key.owner, key.key)
+	elif key.type == SIG_SKEY:
+		sdb_importprivkey("sig_skey", key.id, key.owner, key.key)
+	elif key.type == ENC_PKEY:
+		sdb_importpubkey("enc_pkey", key.id, key.owner, key.key)
+	elif key.type == ENC_SKEY:
+		sdb_importprivkey("enc_skey", key.id, key.owner, key.key)
+	db_commit()
+	out("Imported or updated key %s" % ( aaa(str(key)) ))
+	return 0
+<<<<<<< local
+>>>>>>> /home/fdgonthier/tmp/kcommands.py~other.ktLFVS
+=======
+
+# Export keys to a files beginning with prefix.
+def cmd_exportkeys(id, file_prefix):
+
+	k = sdb_getpubkey("sig", id)
+	if k:
+		key = Key()
+		key.set_key(k)
+		key.set_id(id)
+		key.set_owner("unknown")
+		key.set_type(SIG_PKEY)
+		key.save(file_prefix + ".sig.pkey")
+	else:
+		out("no sig pkey")
+
+	k = sdb_getprivkey("sig", id)
+	if k:
+		key = Key()
+		key.set_key(k)
+		key.set_id(id)
+		key.set_owner("unknown")
+		key.set_type(SIG_SKEY)
+		key.save(file_prefix + ".sig.skey")
+	else:
+		out("no sig skey")
+
+	k = sdb_getpubkey("enc", id)
+	if k:
+		key = Key()
+		key.set_key(k)
+		key.set_id(id)
+		key.set_owner("unknown")
+		key.set_type(ENC_PKEY)
+		key.save(file_prefix + ".enc.pkey")
+	else:
+		out("no enc pkey")
+
+	k = sdb_getprivkey("enc", id)
+	if k:
+		key = Key()
+		key.set_key(k)
+		key.set_id(id)
+		key.set_owner("unknown")
+		key.set_type(ENC_SKEY)
+		key.save(file_prefix + ".enc.skey")
+	else:
+		out("no enc skey")
+
+	db_commit()
+	out("Exported key to %s...." % ( file_prefix ))
+	return 0
+
+>>>>>>> other
+
+# Change the internal key id of a key.
+def cmd_keysetid(in_file, id, out_file):
+	return run_external_kctlbin(["keysetid", in_file, id, out_file])
+
+# Change the internal key name of a key.
+def cmd_keysetname(in_file, name, out_file):
+	return run_external_kctlbin(["keysetname", in_file, name, out_file])
+
+# Print the information contained in a key.
+def cmd_printkey(file):
+	return run_external_kctlbin(["printkey", file])
+
+<<<<<<< /home/fdgonthier/tmp/kcommands.py~base.RQ6r13
+=======
+def cmd_showlicense(license_file):
+	return run_external_kctlbin(["showlicense", license_file])
+
+def cmd_importlicense(license_file):
+<<<<<<< /home/repos/kctl/kcommands.py.orig.2839717718
+    return run_external_kctlbin(["importlicense", license_file])
+>>>>>>> /home/fdgonthier/tmp/kcommands.py~other.ktLFVS
+||||||| /home/fdgonthier/tmp/kcommands.py~base.pWYaS6
+    return run_external_kctlbin(["importlicense", license_file])
+=======
+	return run_external_kctlbin(["importlicense", license_file])
+>>>>>>> /home/fdgonthier/tmp/kcommands.py~other.5Uev03
+
+<<<<<<< /home/fdgonthier/tmp/kcommands.py~base.RQ6r13
+=======
+def cmd_signlicense(kdn, parent_kdn, lim_seats, max_seats, is_reseller, *caps):
+<<<<<<< /home/repos/kctl/kcommands.py.orig.2839717718
+    return run_external_kctlbin(["signlicense", kdn, parent_kdn, lim_seats, max_seats, is_reseller, caps])
+>>>>>>> /home/fdgonthier/tmp/kcommands.py~other.ktLFVS
+||||||| /home/fdgonthier/tmp/kcommands.py~base.pWYaS6
+    return run_external_kctlbin(["signlicense", kdn, parent_kdn, lim_seats, max_seats, is_reseller, caps])
+=======
+	return run_external_kctlbin(["signlicense", kdn, parent_kdn, lim_seats, max_seats, is_reseller, caps])
+>>>>>>> /home/fdgonthier/tmp/kcommands.py~other.5Uev03
+
+### HELPERS ###
+
+def run_external_kctlbin(params):
+	kctlbin = kparams_get("kctlbin")
+	if kparams_get("commit") == False:
+		err("error: tried to call an external program in no_commit mode.")
+		return 1
+	cmd = [kctlbin] + params
+	proc = KPopen("", cmd) # "" is data sent to stdin
+	out_raw(proc.stdout)
+	err_raw(proc.stderr)
+	return proc.return_code
+
+def get_license_item(p_org_id, item):
+	import re
+	kdn = sdb_kdn_by_org_id(p_org_id)
+	kctlbin = kparams_get("kctlbin")
+	cmd = [kctlbin, "showlicense", kdn]
+	proc = KPopen("", cmd) # "" is data sent to stdin
+	if proc.return_code == 0:
+		for line in proc.stdout.split("\n"):
+			try:
+				return re.match("^%s: (-?[0-9]+)$" % (item), line).group(1)
+			except:
+				pass
+	return None
+
+# non recursive... good only with for a single reseller
+def get_seats_available_to_allocate(p_org_id, org_id):
+	parent_license_number = get_license_item(p_org_id, "seat limit")
+	#debug("parent license limit: %s" % str(parent_license_number))
+	reseller_allocated_seats = sdb_reseller_allocated_seats(p_org_id)
+	#debug("total alloc: %s" % str(reseller_allocated_seats))
+	try:
+		allocated_seats = sdb_allocated_seats(org_id)
+	except:
+		allocated_seats = 0
+	#debug("alloc: %s" % (str(allocated_seats)))
+	available = int(parent_license_number) - (int(reseller_allocated_seats) - int(allocated_seats))
+	#debug("available: %s" % ( str(available) ))
+	return int(available)
+	
+def print_tabbed_results(field_descs, res):
+	# print headers (field_descs)
+	if field_descs != None and res != None:
+		for field_desc in field_descs:
+			out_raw("%s\t" % field_desc[0]) # field_desc[0] --> field name
+		out("")
+
+		for row in res:
+			for field_value in row:
+				out_raw("%s\t" % field_value)
+			out("")
+
+def askpassword():
+	pw = None
+	while pw == None or pw == "":
+		pw = input_prompt("User password:")
+	return pw
+
+
